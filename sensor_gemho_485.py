@@ -1,6 +1,8 @@
 print("************* GEMHO Sensor 485 *************")
 import serial.tools.list_ports
 import time
+from server_api import APIHandler
+from kafka_connect import KafkaHandler
 
 gemho_002_temperature   = [0x01, 0x03, 0x00, 0x00, 0x00, 0x01, 0x84, 0x0A]
 gemho_002_humidity      = [0x01, 0x03, 0x00, 0x01, 0x00, 0x01, 0xD5, 0xCA]
