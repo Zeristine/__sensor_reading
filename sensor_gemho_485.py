@@ -1,7 +1,7 @@
 print("************* GEMHO Sensor 485 *************")
 import serial.tools.list_ports
 import time
-from server_api import APIHandler
+from server_api import APIHandler, api_handler
 from kafka_connect import KafkaHandler
 
 gemho_002_temperature   = [0x01, 0x03, 0x00, 0x00, 0x00, 0x01, 0x84, 0x0A]
@@ -11,9 +11,10 @@ gemho_002_co2           = [0x01, 0x03, 0x00, 0x04, 0x00, 0x01, 0xC5, 0xF8]
 gemho_002_light         = [0x01, 0x03, 0x00, 0x02, 0x00, 0x02, 0x65, 0xCB]
 messages = [gemho_002_temperature,
             gemho_002_humidity,
-            gemho_002_co2,
-            gemho_002_light]
-labels = ["Temperature", "Humidity", "CO2", "Light"]
+            gemho_002_light,
+            gemho_002_co2
+            ]
+labels = ["Temperature", "Humidity", "Light", "CO2"]
 
 
 def getPort():
@@ -31,8 +32,6 @@ def getPort():
     # return "COM23"
     print(commPort)
     return commPort
-
-ser = serial.Serial( port=getPort(), baudrate=9600)
 
 def readSerial(pos):
     bytesToRead = ser.inWaiting()
@@ -56,27 +55,30 @@ def fetchStat(pos):
     time.sleep(1)
     readSerial(pos)
 
+# ************************************************************************
+# Start here
+# ************************************************************************
+port = getPort()
+ser = serial.Serial( port=port, baudrate=9600)
+api_handler = APIHandler()
+api_handler._create_device({
+    'device' : port.device,
+    'name' : port.name,
+    'description' : port.description,
+    'hwid' : port.hwid,
+    'vid' : port.vid,
+    'pid' : port.pid,
+    'product' : port.product,
+    'location' : port.location
+})
 n = 1;
 while True:
-    
-    # length = 7
-    # ser.write(serial.to_bytes(gemho_002_temperature))
-    # time.sleep(1)
-    # readSerial()
-    # fetchStat(0)
-    
-    # length = 7
-    # ser.write(serial.to_bytes(gemho_002_humidity))
-    # time.sleep(1)
-    # readSerial()
-    # fetchStat(1)
     
     print("********************************************")
     print("Take ", n)
     fetchStat(0)
     fetchStat(1)
-    # fetchStat(2)
-    fetchStat(3)
+    fetchStat(2)
     n += 1
 
     time.sleep(5)
