@@ -3,7 +3,6 @@ import time
 import json 
 import random 
 from datetime import datetime
-from data_generator import generate_message
 from kafka import KafkaProducer, KafkaConsumer, KafkaException
 from dotenv import load_dotenv
 
