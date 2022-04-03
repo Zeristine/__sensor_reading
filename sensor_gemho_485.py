@@ -22,6 +22,7 @@ def getPort():
     N = len(ports)
     # print(N)
     commPort = "None"
+    port = None
     for i in range(0, N):
         port = ports[i]
         strPort = str(port)
@@ -31,7 +32,7 @@ def getPort():
             commPort = (splitPort[0])
     # return "COM23"
     print(commPort)
-    return commPort
+    return port, commPort
 
 def readSerial(pos):
     bytesToRead = ser.inWaiting()
@@ -42,10 +43,10 @@ def readSerial(pos):
         # print(len(data_array))
         # print(data_array)
         label = labels[pos]
-        if label is "Temperature" or label is "Humidity":
+        if label == "Temperature" or label == "Humidity":
             value = (data_array[3]*256 + data_array[4])/10
             print(label + ":",  value)
-        elif label is "Light":
+        elif label == "Light":
             value = (data_array[6]*256 + data_array[7])/10
             print(label + ":",  value)
             
@@ -58,8 +59,8 @@ def fetchStat(pos):
 # ************************************************************************
 # Start here
 # ************************************************************************
-port = getPort()
-ser = serial.Serial( port=port, baudrate=9600)
+port, comPortStr = getPort()
+ser = serial.Serial( port=comPortStr, baudrate=9600)
 api_handler = APIHandler()
 api_handler._create_device({
     'device' : port.device,
@@ -72,7 +73,8 @@ api_handler._create_device({
     'location' : port.location
 })
 n = 1;
-while True:
+isRunning = True
+while isRunning:
     
     print("********************************************")
     print("Take ", n)
@@ -81,4 +83,6 @@ while True:
     fetchStat(2)
     n += 1
 
+    if n == 2:
+        isRunning = False
     time.sleep(5)

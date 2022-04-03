@@ -3,7 +3,7 @@ import time
 import json 
 import random 
 from datetime import datetime
-from kafka import KafkaProducer, KafkaConsumer, KafkaException
+from kafka import KafkaProducer, KafkaConsumer
 from dotenv import load_dotenv
 
 class KafkaHandler:
