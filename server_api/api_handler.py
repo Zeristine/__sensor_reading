@@ -15,17 +15,16 @@ class APIHandler:
 
     def __init__(self):
         load_dotenv()
-        self.url = os.getenv("API_URL")
+        self.urlList = os.getenv("API_LIST_DEVICE")
+        self.urlCreate = os.getenv("API_CREATE_DEVICE")
     
     # GET list device
     def _get_devices(self):
-        CREATE_DEVICE = urljoin(self.url, 'createDevice')
-        response = requests.get(CREATE_DEVICE)
+        response = requests.get(self.urlList)
         print(response.json())
     
     # POST new device
     def _create_device(self, deviceInfo):
-        CREATE_DEVICE = urljoin(self.url, 'createDevice')
         headers_config = {
             'content-type': 'application/json',
             'Accept':'application/json',
@@ -34,5 +33,5 @@ class APIHandler:
             }
         #format: {"name": "loc_test_6"}
         payload = json.dumps(deviceInfo)
-        response = requests.post(CREATE_DEVICE, data=payload, headers=headers_config)
+        response = requests.post(self.urlCreate, data=payload, headers=headers_config)
         print(response.text)
