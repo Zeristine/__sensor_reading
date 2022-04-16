@@ -50,7 +50,7 @@ def readSerial(pos):
         # print("Received:", out)
         data_array = [b for b in out]
         # print("Data Length", len(data_array))
-        # print("Data", data_array)
+        print("Data", data_array)
         label = labels[pos]
         value = 0
         match pos:
@@ -90,18 +90,21 @@ ser = serial.Serial( port=comPortStr, baudrate=9600)
 #     'product' : port.product,
 #     'location' : port.location
 # })
-n = 1;
+
+print("HWID: " + str(port.hwid) + ", vid: " + str(port.vid) + ", pid: " + str(port.pid))
+
+n = 1
 isRunning = True
 while isRunning:
     
     print("********************************************")
     print("Take ", n)
-    # fetchStat(0)
-    # fetchStat(1)
-    # fetchStat(2)
-    fetchStat(4)
-    fetchStat(5)
-    fetchStat(6)
+    fetchStat(0)
+    fetchStat(1)
+    fetchStat(2)
+    # fetchStat(4)
+    # fetchStat(5)
+    # fetchStat(6)
     n += 1
 
     if n == 3:
