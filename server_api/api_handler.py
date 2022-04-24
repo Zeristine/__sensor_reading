@@ -23,6 +23,11 @@ class APIHandler:
         response = requests.get(self.urlList)
         print(response.json())
     
+    def _get_request(self):
+        response = requests.get(self.urlRequest)
+        return response
+
+
     # POST new device
     def _create_device(self, deviceInfo):
         headers_config = {

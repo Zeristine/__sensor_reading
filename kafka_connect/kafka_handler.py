@@ -10,7 +10,7 @@ class KafkaHandler:
 
     def __init__(self):
         load_dotenv()
-        self.server = os.getenv("KAFKA_BOOTSTRAP_SERVERS")
+        self.server = os.getenv("KAFKA_BOOTSTRAP_SERVERS_LOCAL")
     
     # Messages will be serialized as JSON 
     def serializer(message):
@@ -26,11 +26,13 @@ class KafkaHandler:
     def _pub(self, topic, mess):
         producer = KafkaProducer(
             bootstrap_servers = self.server,
-            value_serializer = self.serializer(),
+            # value_serializer = self.serializer,
+            value_serializer=lambda v: json.dumps(v).encode('utf-8'),
             compression_type = 'gzip'
         )
-        producer.send(topic, mess, callback = self.callback())
-        producer.poll(5)
+        result = producer.send(topic, mess)
+        print(result)
+        # producer.poll(5)
         
     def _sub(self, topic):
         consumer = KafkaConsumer(
