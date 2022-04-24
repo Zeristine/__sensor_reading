@@ -73,6 +73,32 @@ def fetchStat(pos):
     time.sleep(1)
     readSerial(pos)
 
+def getSensorResponse(request):
+    ser.write(serial.to_bytes(request))
+    # time.sleep(1)
+    bytesToRead = ser.inWaiting()
+    value = 0
+    label = request[1:3]
+    if (bytesToRead > 0):
+        out = ser.read(bytesToRead)
+        data_array = [b for b in out]
+        match len(data_array):
+            case 6:
+                value = (data_array[3]*256 + data_array[4])/10
+            case 8:
+                value = (data_array[6]*256 + data_array[7])/10
+    return {'address':label, 'value':value}
+
+def getMultipleSensorResponses(devices):
+    result = []
+    for device in devices:
+        id = device.id
+        responses = []
+        for request in device.requests:
+            responses.append(getSensorResponse(request=request))
+        result.append({'id' : id, 'response' : responses})
+    return result
+
 # ************************************************************************
 # Start here
 # ************************************************************************
@@ -107,6 +133,6 @@ while isRunning:
     # fetchStat(6)
     n += 1
 
-    if n == 3:
-        isRunning = False
-    time.sleep(5)
+    # if n == 3:
+    #     isRunning = False
+    # time.sleep(5)
