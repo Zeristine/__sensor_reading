@@ -3,6 +3,7 @@ import serial.tools.list_ports
 import time
 from server_api import APIHandler, api_handler
 from kafka_connect import KafkaHandler
+from multiprocessing import Queue
 
 # old_gemho_002_co2       = [0x02, 0x03, 0x00, 0x04, 0x00, 0x01, 0xC5, 0xF8]
 # Gemho sending message
@@ -70,7 +71,7 @@ def readSerial(pos):
 def fetchStat(pos):
     print(messages[pos])
     ser.write(serial.to_bytes(messages[pos]))
-    time.sleep(1)
+    time.sleep(0.5)
     readSerial(pos)
 
 def getSensorResponse(request):
@@ -103,7 +104,14 @@ def getMultipleSensorResponses(devices):
 # Start here
 # ************************************************************************
 port, comPortStr = getPort()
-ser = serial.Serial( port=comPortStr, baudrate=9600)
+ser = serial.Serial(
+    port=comPortStr,
+    baudrate=9600,
+    parity=serial.PARITY_NONE,
+    stopbits=serial.STOPBITS_ONE,
+    timeout=1,
+    write_timeout=1
+    )
 # api_handler = APIHandler()
 # api_handler._get_devices()
 # api_handler._create_device({
@@ -135,4 +143,4 @@ while isRunning:
 
     # if n == 3:
     #     isRunning = False
-    # time.sleep(5)
+    # time.sleep(1)

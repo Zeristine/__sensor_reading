@@ -17,6 +17,7 @@ class APIHandler:
         load_dotenv()
         self.urlList = os.getenv("API_LIST_DEVICE")
         self.urlCreate = os.getenv("API_CREATE_DEVICE")
+        self.urlRequest = os.getenv("API_REQUESTS")
     
     # GET list device
     def _get_devices(self):
@@ -25,7 +26,7 @@ class APIHandler:
     
     def _get_request(self):
         response = requests.get(self.urlRequest)
-        return response
+        return response.json()
 
 
     # POST new device

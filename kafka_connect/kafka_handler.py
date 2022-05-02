@@ -31,7 +31,7 @@ class KafkaHandler:
             compression_type = 'gzip'
         )
         result = producer.send(topic, mess)
-        print(result)
+        return result
         # producer.poll(5)
         
     def _sub(self, topic):
