@@ -28,12 +28,11 @@ from server_api.api_handler import APIHandler
 list_request = []
 def push_sensor_request():
     print("Push request to sensor")
+    if(len(list_request) <= 0):
+        fetch_api()
     if(len(list_request) > 0):
         #push to sensor
         print(list_request)
-    else:
-        fetch_api()
-        print("Failed")
 
 
 
