@@ -23,11 +23,16 @@ def crc_modbus_calculate(message_array):
     high_byte, low_byte = divmod(start, 0x100)
     return high_byte, low_byte
 
-messages = [[0x02, 0x03, 0x00, 0x06, 0x00, 0x01],
-            [0x02, 0x03, 0x00, 0x07, 0x00, 0x01],
-            [0x02, 0x03, 0x00, 0x08, 0x00, 0x01]]
+hex_string = "0xAA"
 
-for message in messages:
-    high_byte, low_byte = crc_modbus_calculate(message)
-    print(hex(high_byte) + "," + hex(low_byte))
+an_integer = int(hex_string, 16)
+
+hex_value = hex(an_integer)
+# messages = [[0x02, 0x03, 0x00, 0x06, 0x00, 0x01],
+#             [0x02, 0x03, 0x00, 0x07, 0x00, 0x01],
+#             [0x02, 0x03, 0x00, 0x08, 0x00, 0x01]]
+
+# for message in messages:
+#     high_byte, low_byte = crc_modbus_calculate(message)
+#     print(hex(high_byte) + "," + hex(low_byte))
     
