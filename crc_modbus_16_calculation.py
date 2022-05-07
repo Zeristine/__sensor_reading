@@ -1,3 +1,4 @@
+from email import message
 import math
 
 def right_shift_and_get_last_bit(number): 
@@ -23,16 +24,33 @@ def crc_modbus_calculate(message_array):
     high_byte, low_byte = divmod(start, 0x100)
     return high_byte, low_byte
 
-hex_string = "0xAA"
+def covnert_message_to_all_nummber(message_array):
+    return [int(value, 16) if isinstance(value, str) else value for value in message_array]
 
-an_integer = int(hex_string, 16)
+def generate_modbus_message(message_array):
+    message_converted = covnert_message_to_all_nummber(message_array)
+    crc_high_byte, crc_low_byte = crc_modbus_calculate(message_converted)
+    message_converted.append(crc_low_byte)
+    message_converted.append(crc_high_byte)
+    return message_converted
 
-hex_value = hex(an_integer)
-# messages = [[0x02, 0x03, 0x00, 0x06, 0x00, 0x01],
-#             [0x02, 0x03, 0x00, 0x07, 0x00, 0x01],
-#             [0x02, 0x03, 0x00, 0x08, 0x00, 0x01]]
+# Testing Area
+# Sample
+soil_detection_temperature   = [0x02, 0x03, 0x00, 0x06, 0x00, 0x01, 0x64, 0x38]
+soil_detection_humidity      = [0x02, 0x03, 0x00, 0x07, 0x00, 0x01, 0x35, 0xF8]
+soil_detection_ec            = [0x02, 0x03, 0x00, 0x08, 0x00, 0x01, 0x05, 0xFB]
+print("Sample:")
+print(soil_detection_temperature)
+print(soil_detection_humidity)
+print(soil_detection_ec)
+# Test
+print("Mixed messages:")
+messages = [[0x02, 0x03, 0x00, 0x06, 0x00, 0x01],
+            [0x02, 0x03, 0x00, 0x07, 0x00, 0x01],
+            [0x02, 0x03, 0x00, 0x08, 0x00, 0x01],
+            ["0x02", "0x03", '0x00', '0x07', '0x00', '0x01'],
+            ['0x02', '0x03', '0x00', '0x08', '0x00', '0x01']]
 
-# for message in messages:
-#     high_byte, low_byte = crc_modbus_calculate(message)
-#     print(hex(high_byte) + "," + hex(low_byte))
+for message in messages:
+    print(generate_modbus_message(message))
     
