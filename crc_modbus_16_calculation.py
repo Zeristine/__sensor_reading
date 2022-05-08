@@ -1,6 +1,3 @@
-from email import message
-import math
-
 def right_shift_and_get_last_bit(number): 
     return number >> 1, (number - (number >> 1 << 1))
 
