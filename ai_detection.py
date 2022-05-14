@@ -34,7 +34,7 @@ def ai_detection():
 
     # run the inference
     prediction = model.predict(data)
-    print(prediction)
+    print("Predict: " + str(prediction))
     result_ai = prediction[0]
     max_value = result_ai[0]
     max_index = 0
