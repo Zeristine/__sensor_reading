@@ -5,7 +5,7 @@ import schedule
 import queue
 import crc_modbus_16_calculation as chkSum
 from server_api.api_handler import APIHandler
-
+from kafka_connect import KafkaHandler
 list_request = []
 
 
@@ -44,7 +44,9 @@ def generate_request():
         list_send.append(obj_request)  
     print(list_send)
         
-
+def pub_response(response):
+    instanceKafka = KafkaHandler()
+    print(instanceKafka._pub("sample",response))
 
 def fetch_api():
     print("Fetch api data")
