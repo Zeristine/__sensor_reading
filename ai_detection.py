@@ -4,13 +4,23 @@ from PIL import Image, ImageOps
 import numpy as np
 import cv2
 import time
+import os
 
+execution_path = os.getcwd()
 cam = cv2.VideoCapture(0)
 # Load the model
 model = load_model('AI\keras_model.h5')
 
 def capture_image():
+    start_time = time.time()
     ret, frame = cam.read()
+    fpsInfo = "FPS: " + str(1.0 / (time.time() - start_time)) 
+    print(fpsInfo)
+
+    cv2.putText(frame, fpsInfo, (10, 10), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
+
+    # Display the resulting image
+    cv2.imshow('Video', frame)
     cv2.imwrite("img_detect.png", frame)
 
 def ai_detection():
@@ -49,3 +59,9 @@ while True:
     capture_image()
     ai_detection()
     time.sleep(5)
+     # Hit 'q' on the keyboard to quit!
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cam.release()
+cv2.destroyAllWindows()

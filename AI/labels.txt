@@ -1,1 +1,2 @@
-0 Mask
+0 MaSK
+1 Unmask
