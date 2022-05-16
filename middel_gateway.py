@@ -1,13 +1,14 @@
 from pickle import TRUE
 import time
 import threading
+from numpy import append
 import schedule
 import queue
 import crc_modbus_16_calculation as chkSum
 from server_api.api_handler import APIHandler
 from kafka_connect import KafkaHandler
+import modbus_serial_connect as sensor_connect
 list_request = []
-
 
 def push_sensor_request():
     print("Push request to sensor")
@@ -26,23 +27,25 @@ def generate_request():
             "id": request["id"],
             "requests" : []
         }
-        address = request["address"].split(",")
+        address_sensor = request["address"].split(",")
         for label in request["labels"]:
             address_label = label["address"].split(",")
             item_request = []
-            item_request.append(address[0])
-            item_request.append(address[1])
+            item_request.append(address_sensor[0])
+            item_request.append(address_sensor[1])
             item_request.append(address_label[0])
             item_request.append(address_label[1])
-            item_request.append("0x00")
-
-            
+            # item_request.append("0x00")
+            # item_request.append("0x01")
+            item_request.append(address_label[2])
+            item_request.append(address_label[3])
             # high_byte, low_byte = chkSum.crc_modbus_calculate(item_request)
             # item_request.append(hex(low_byte))
             # item_request.append(hex(low_byte))
-            obj_request["requests"].append(item_request)
-        list_send.append(obj_request)  
-    print(list_send)
+            obj_request["requests"].append(chkSum.generate_modbus_message(item_request))
+        list_send.append(obj_request)
+        print("Sending")
+        sensor_connect.addRequestsToQueue(list_send) 
         
 def pub_response(response):
     print("Pub response to Kafka")
@@ -78,13 +81,13 @@ jobqueue = queue.Queue()
 # schedule.every(1).seconds.do(jobqueue.put, fetch_api)
 schedule.every(5).seconds.do(jobqueue.put, push_sensor_request)
 schedule.every(1).minutes.do(jobqueue.put, fetch_api)
+if __name__ ==  '__main__':
+    sensor_connect.startProcesses()
+    #sensor_connect.initSerialModel()
+    worker_thread = threading.Thread(target=worker_main)
+    worker_thread.start()
 
-worker_thread = threading.Thread(target=worker_main)
-worker_thread.start()
-
-i = 0
-while 1:
-    schedule.run_pending()
-    time.sleep(1)
-    i = i + 1
+    while 1:
+        schedule.run_pending()
+        time.sleep(1)
 

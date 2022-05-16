@@ -11,6 +11,7 @@ gemho_002_temperature   = [0x01, 0x03, 0x00, 0x00, 0x00, 0x01, 0x84, 0x0A]
 gemho_002_humidity      = [0x01, 0x03, 0x00, 0x01, 0x00, 0x01, 0xD5, 0xCA]
 gemho_002_co2           = [0x01, 0x03, 0x00, 0x04, 0x00, 0x01, 0xC5, 0xF8]
 gemho_002_light         = [0x01, 0x03, 0x00, 0x02, 0x00, 0x02, 0x65, 0xCB]
+gemho_002_humid_mod = [1, 3, 0, 1, 0, 1, 213, 202]
 # Soil Detection sending message
 soil_detection_temperature   = [0x02, 0x03, 0x00, 0x06, 0x00, 0x01, 0x64, 0x38]
 soil_detection_humidity      = [0x02, 0x03, 0x00, 0x07, 0x00, 0x01, 0x35, 0xF8]
@@ -21,10 +22,11 @@ messages = [gemho_002_temperature,
             gemho_002_co2,
             soil_detection_humidity,
             soil_detection_temperature,
-            soil_detection_ec
+            soil_detection_ec,
+            gemho_002_humid_mod
             ]
 labels = ["Temperature", "Humidity", "Light", "CO2", "Soil Humidity", "Soil Temperature",
-          "Soil Electricity"]
+          "Soil Electricity", "Test"]
 
 
 def getPort():
@@ -55,7 +57,7 @@ def readSerial(pos):
         label = labels[pos]
         value = 0
         match pos:
-            case 0 | 1:
+            case 0 | 1 | 7:
                 value = (data_array[3]*256 + data_array[4])/10
             case 2:
                 value = (data_array[6]*256 + data_array[7])/10
@@ -133,9 +135,9 @@ while isRunning:
     
     print("********************************************")
     print("Take ", n)
-    fetchStat(0)
-    fetchStat(1)
-    fetchStat(2)
+    fetchStat(7)
+    # fetchStat(1)
+    # fetchStat(2)
     # fetchStat(4)
     # fetchStat(5)
     # fetchStat(6)
