@@ -1,6 +1,7 @@
 from multiprocessing import Queue, Process
 import serial.tools.list_ports
 import time
+import middel_gateway
 
 serial_model = None
 request_queue = Queue()
@@ -48,6 +49,7 @@ def getSensorResponse(queue):
                 value = (data_array[3]*256 + data_array[4])/10
             case 8:
                 value = (data_array[6]*256 + data_array[7])/10
+    middel_gateway.pub_response({'address':label, 'value':value})
     response_queue.put({'address':label, 'value':value})
 
 # Processing Response

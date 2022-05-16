@@ -45,8 +45,9 @@ def generate_request():
     print(list_send)
         
 def pub_response(response):
+    print("Pub response to Kafka")
     instanceKafka = KafkaHandler()
-    print(instanceKafka._pub("sample",response))
+    instanceKafka._pub("sensor_data",response)
 
 def fetch_api():
     print("Fetch api data")
