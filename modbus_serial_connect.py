@@ -8,7 +8,8 @@ print("Init")
 request_queue = None
 response_queue = None
 
-
+labels = ["Temperature", "Humidity", "Light", "CO2", "Soil Humidity", "Soil Temperature",
+          "Soil Electricity"]
 def getAvailableComPort():
     ports = serial.tools.list_ports.comports()
     N = len(ports)
@@ -44,32 +45,27 @@ def initSerialModel():
 
 def getSensorResponse(queue):
     # global response_queue
-    print("Get sensor")
     if queue.empty():
         if response_queue != None:
             response_queue.put({})
     else:
-        print("Get queue")
         request = queue.get()
         for request_message in request["requests"]:
-            print("Request: " + str(request_message))
             serial_model.write(serial.to_bytes(request_message))
             time.sleep(0.5)
             bytesToRead = serial_model.inWaiting()
             value = 0
             label = request_message[2:4]
-            print(bytesToRead)
             if (bytesToRead > 0):
                 output = serial_model.read(bytesToRead)
                 data_array = [data for data in output]
-                print(data_array)
                 match len(data_array):
                     case 7:
                         value = (data_array[3]*256 + data_array[4])/10
                     case 9:
                         value = (data_array[6]*256 + data_array[7])/10
-            middel_gateway.pub_response({'address':label, 'value':value})
-            response_queue.put({'address': label, 'value': value})
+            middel_gateway.pub_response({'label': labels[label[1]], 'address':label, 'value':value})
+            response_queue.put({'label': labels[label[1]], 'address': label, 'value': value})
         print(response_queue.get())
 
 # Processing Response
@@ -88,7 +84,6 @@ def addRequestsToQueue(external_requests):
     for request in external_requests:
         request_queue.put(request)
     getSensorResponse(request_queue)
-    print("done")
 
 
 def startProcesses():

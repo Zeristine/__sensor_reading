@@ -1,2 +1,2 @@
-0 MaSK
-1 Unmask
+0 Normal
+1 Sick
