@@ -16,6 +16,9 @@ gemho_002_humid_mod = [1, 3, 0, 1, 0, 1, 213, 202]
 soil_detection_temperature   = [0x02, 0x03, 0x00, 0x06, 0x00, 0x01, 0x64, 0x38]
 soil_detection_humidity      = [0x02, 0x03, 0x00, 0x07, 0x00, 0x01, 0x35, 0xF8]
 soil_detection_ec            = [0x02, 0x03, 0x00, 0x08, 0x00, 0x01, 0x05, 0xFB]
+# Relay message
+relay_rs485_on  = [15, 6, 0, 0, 0, 255, 200, 164]
+relay_rs485_off = [15, 6, 0, 0, 0, 0, 136, 228]
 messages = [gemho_002_temperature,
             gemho_002_humidity,
             gemho_002_light,
@@ -23,10 +26,11 @@ messages = [gemho_002_temperature,
             soil_detection_humidity,
             soil_detection_temperature,
             soil_detection_ec,
-            gemho_002_humid_mod
+            relay_rs485_on,
+            relay_rs485_off
             ]
 labels = ["Temperature", "Humidity", "Light", "CO2", "Soil Humidity", "Soil Temperature",
-          "Soil Electricity", "Test"]
+          "Soil Electricity", "Relay On", "Relay Off"]
 
 
 def getPort():
@@ -67,6 +71,8 @@ def readSerial(pos):
                 value = (data_array[3]*256 + data_array[4])/10
             case 6:
                 value = (data_array[3]*256 + data_array[4])/10
+            case 7 | 8:
+                value = data_array
         print(label + ":",  value)        
             
 
@@ -136,13 +142,15 @@ while isRunning:
     print("********************************************")
     print("Take ", n)
     fetchStat(7)
-    # fetchStat(1)
-    # fetchStat(2)
-    # fetchStat(4)
-    # fetchStat(5)
-    # fetchStat(6)
+    fetchStat(0)
+    fetchStat(1)
+    fetchStat(5)
+    fetchStat(2)
+    fetchStat(4)
+    fetchStat(6)
+    fetchStat(8)
     n += 1
 
-    # if n == 3:
-    #     isRunning = False
-    # time.sleep(1)
+    if n > 2:
+        isRunning = False
+    time.sleep(1)
