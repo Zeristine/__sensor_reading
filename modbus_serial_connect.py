@@ -2,14 +2,15 @@ from multiprocessing import Queue, Process
 import serial.tools.list_ports
 import time
 import middel_gateway
-
 serial_model = None
-print("Init")
-request_queue = None
-response_queue = None
+request_queue = Queue()
+response_queue = Queue()
 
-labels = ["Temperature", "Humidity", "Light", "CO2", "Soil Humidity", "Soil Temperature",
-          "Soil Electricity"]
+dict_sensor = {}
+# labels = ["Temperature", "Humidity", "Light", "CO2", "Soil Humidity", "Soil Temperature",
+#           "Soil Electricity"]
+
+
 def getAvailableComPort():
     ports = serial.tools.list_ports.comports()
     N = len(ports)
@@ -40,8 +41,6 @@ def initSerialModel():
         timeout=1,
         write_timeout=1)
 
-# Processing Request
-
 
 def getSensorResponse(queue):
     # global response_queue
@@ -51,6 +50,7 @@ def getSensorResponse(queue):
     else:
         request = queue.get()
         for request_message in request["requests"]:
+            print(request_message)
             serial_model.write(serial.to_bytes(request_message))
             time.sleep(0.5)
             bytesToRead = serial_model.inWaiting()
@@ -64,9 +64,12 @@ def getSensorResponse(queue):
                         value = (data_array[3]*256 + data_array[4])/10
                     case 9:
                         value = (data_array[6]*256 + data_array[7])/10
-            middel_gateway.pub_response({'label': labels[label[1]], 'address':label, 'value':value})
-            response_queue.put({'label': labels[label[1]], 'address': label, 'value': value})
-        print(response_queue.get())
+            middel_gateway.pub_response(
+                {'id': request["id"], 'address': label, 'value': value})
+            response_queue.put(
+                {'id': request["id"], 'address': label, 'value': value})
+            # middel_gateway.pub_response({'label': labels[label[1]], 'address':label, 'value':value})
+            # response_queue.put({'label': labels[label[1]], 'address': label, 'value': value})
 
 # Processing Response
 
@@ -82,12 +85,12 @@ def addRequestsToQueue(external_requests):
     # global request_queue
     print("Add queue")
     for request in external_requests:
+        # dict_sensor[request["address"]] = request["id"]
         request_queue.put(request)
     getSensorResponse(request_queue)
 
 
 def startProcesses():
-    
     initSerialModel()
     # request_process = Process(target=getSensorResponse, args=(request_queue,))
     # request_process.start()
@@ -95,7 +98,7 @@ def startProcesses():
     # response_process = Process(
     #     target=sendResponseToMiddleGateWay, args=(response_queue,))
     # response_process.start()
-    
+
     # request_queue.join()
     # response_queue.join()
 
@@ -110,3 +113,7 @@ def startProcesses():
 
 # request_process.join()
 # response_process.join()
+
+
+if __name__ == "__main__":
+    startProcesses()

@@ -1,3 +1,7 @@
+import numpy as np
+from PIL import Image, ImageOps
+from keras.models import load_model
+import cv2
 from pickle import TRUE
 import time
 import threading
@@ -5,18 +9,26 @@ from numpy import append
 import schedule
 import queue
 import crc_modbus_16_calculation as chkSum
-from server_api.api_handler import APIHandler
-from kafka_connect import KafkaHandler
+import api_handler as APIHandler
+import kafka_handler as KafkaHandler
 import modbus_serial_connect as sensor_connect
+import sentry_sdk
+import logging
+import serial.serialutil as serial_util
+sentry_sdk.init(
+    "https://df1d0f6c65214be9b14737b8d26cde07@o1266351.ingest.sentry.io/6458960",
 
+    # Set traces_sample_rate to 1.0 to capture 100%
+    # of transactions for performance monitoring.
+    # We recommend adjusting this value in production.
+    traces_sample_rate=1
+)
 # region import AI
-import cv2
-from keras.models import load_model
-from PIL import Image, ImageOps
-import numpy as np
 
 cam = cv2.VideoCapture(0)
 model = load_model('AI\keras_model.h5')
+list_request = []
+jobqueue = queue.Queue()
 
 
 def capture_image():
@@ -47,7 +59,6 @@ def ai_detection():
 
     # run the inference
     prediction = model.predict(data)
-    print("Predict: " + str(prediction))
     result_ai = prediction[0]
     max_value = result_ai[0]
     max_index = 0
@@ -66,17 +77,16 @@ def ai_detection():
 # endregion
 
 
-list_request = []
-
-
 def push_sensor_request():
     print("Push request to sensor")
     if(len(list_request) <= 0):
         fetch_api()
     if(len(list_request) > 0):
-        # push to sensor
-        # print(list_request)
         generate_request()
+
+
+def automation(req):
+    print(req)
 
 
 def generate_request():
@@ -84,7 +94,8 @@ def generate_request():
     for request in list_request:
         obj_request = {
             "id": request["id"],
-            "requests": []
+            "requests": [],
+            "address": request["address"]
         }
         address_sensor = request["address"].split(",")
         for label in request["labels"]:
@@ -94,30 +105,25 @@ def generate_request():
             item_request.append(address_sensor[1])
             item_request.append(address_label[0])
             item_request.append(address_label[1])
-            # item_request.append("0x00")
-            # item_request.append("0x01")
             item_request.append(address_label[2])
             item_request.append(address_label[3])
-            # high_byte, low_byte = chkSum.crc_modbus_calculate(item_request)
-            # item_request.append(hex(low_byte))
-            # item_request.append(hex(low_byte))
             obj_request["requests"].append(
                 chkSum.generate_modbus_message(item_request))
         list_send.append(obj_request)
-        print("Sending")
-        sensor_connect.addRequestsToQueue(list_send)
+    print("Requests: ")
+    print(list_send)
+    # sensor_connect.addRequestsToQueue(list_send)
 
 
 def pub_response(response, topic="sensor_data"):
     print("Pub response to Kafka")
-    instanceKafka = KafkaHandler()
-    instanceKafka._pub(topic, response)
+    print(response)
+    KafkaHandler.pub(topic, response)
 
 
 def fetch_api():
     print("Fetch api data")
-    instanceAPI = APIHandler()
-    list_result = instanceAPI._get_request()
+    list_result = APIHandler.get_request()
     global list_request
     if(len(list_request) > 0):
         for result in list_result:
@@ -131,6 +137,10 @@ def fetch_api():
         list_request = list_result
 
 
+def automation_trigger(message):
+    print(message.value)
+
+
 def worker_main():
     while 1:
         job_func = jobqueue.get()
@@ -138,27 +148,39 @@ def worker_main():
         jobqueue.task_done()
 
 
-jobqueue = queue.Queue()
-
 # schedule.every(1).seconds.do(jobqueue.put, fetch_api)
 schedule.every(5).seconds.do(jobqueue.put, push_sensor_request)
 schedule.every(5).seconds.do(jobqueue.put, ai_detection)
 schedule.every(1).minutes.do(jobqueue.put, fetch_api)
-if __name__ == '__main__':
-    sensor_connect.startProcesses()
 
-    # sensor_connect.initSerialModel()
-    worker_thread = threading.Thread(target=worker_main)
-    worker_thread.start()
-    loop_forever = True
-    while loop_forever:
-        try:
-            schedule.run_pending()
-            time.sleep(1)
-        except KeyboardInterrupt:
-            loop_forever = False
-        # capture_image()
-        # if cv2.waitKey(1) & 0xFF == ord('q'):
-        #     break
-    cam.release()
-    cv2.destroyAllWindows()
+
+def start():
+    try:
+        sensor_connect.startProcesses()
+        worker_thread_sensor = threading.Thread(target=worker_main)
+        worker_thread_automation = threading.Thread(
+        target=KafkaHandler.sub, args=("automation_data", automation_trigger))
+        worker_thread_automation.start()
+        worker_thread_sensor.start()
+        loop_forever = True
+        while loop_forever:
+            try:
+                schedule.run_pending()
+                time.sleep(1)
+            except KeyboardInterrupt:
+                loop_forever = False
+    except serial_util.SerialException as serial_exception:
+        sentry_sdk.capture_exception(serial_exception)
+        logging.exception(serial_exception)
+    except Exception as general_exception:
+        sentry_sdk.capture_exception(general_exception)
+        logging.exception(general_exception)
+    finally:
+        # worker_thread_automation.join()
+        # worker_thread_sensor.join()
+        cam.release()
+        cv2.destroyAllWindows()
+
+
+if __name__ == '__main__':
+    start()
