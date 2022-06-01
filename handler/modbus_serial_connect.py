@@ -1,14 +1,11 @@
 from multiprocessing import Queue, Process
 import serial.tools.list_ports
 import time
-import middel_gateway
 serial_model = None
 request_queue = Queue()
 response_queue = Queue()
 
 dict_sensor = {}
-# labels = ["Temperature", "Humidity", "Light", "CO2", "Soil Humidity", "Soil Temperature",
-#           "Soil Electricity"]
 
 
 def getAvailableComPort():
@@ -50,7 +47,6 @@ def getSensorResponse(queue):
     else:
         request = queue.get()
         for request_message in request["requests"]:
-            print(request_message)
             serial_model.write(serial.to_bytes(request_message))
             time.sleep(0.5)
             bytesToRead = serial_model.inWaiting()
@@ -64,55 +60,32 @@ def getSensorResponse(queue):
                         value = (data_array[3]*256 + data_array[4])/10
                     case 9:
                         value = (data_array[6]*256 + data_array[7])/10
-            middel_gateway.pub_response(
-                {'id': request["id"], 'address': label, 'value': value})
-            response_queue.put(
-                {'id': request["id"], 'address': label, 'value': value})
+            KafkaHandler.pub(
+                "sensor_data", {'id': request["id"], 'address': label, 'value': value})
             # middel_gateway.pub_response({'label': labels[label[1]], 'address':label, 'value':value})
             # response_queue.put({'label': labels[label[1]], 'address': label, 'value': value})
 
-# Processing Response
 
-
-def sendResponseToMiddleGateWay(queue):
-    print("Send queue response")
-    response = queue.get()
-    print(response)
-    # Method của anh Lộc
-
-
-def addRequestsToQueue(external_requests):
-    # global request_queue
-    print("Add queue")
-    for request in external_requests:
-        # dict_sensor[request["address"]] = request["id"]
-        request_queue.put(request)
-    getSensorResponse(request_queue)
+def sendRequestToSensor(request):
+    # global response_queue
+    serial_model.write(serial.to_bytes(request["requests"]))
+    time.sleep(0.5)
+    bytesToRead = serial_model.inWaiting()
+    value = 0
+    label = request["requests"][1:3]
+    if (bytesToRead > 0):
+        output = serial_model.read(bytesToRead)
+        data_array = [data for data in output]
+        match len(data_array):
+            case 7:
+                value = (data_array[3]*256 + data_array[4])/10
+            case 9:
+                value = (data_array[6]*256 + data_array[7])/10
+    return {'id': request["id"], 'address': label, 'value': value}
 
 
 def startProcesses():
     initSerialModel()
-    # request_process = Process(target=getSensorResponse, args=(request_queue,))
-    # request_process.start()
-
-    # response_process = Process(
-    #     target=sendResponseToMiddleGateWay, args=(response_queue,))
-    # response_process.start()
-
-    # request_queue.join()
-    # response_queue.join()
-
-#######################################################################################################
-#######################################################################################################
-#######################################################################################################
-
-# request_process = Process(target=getSensorResponse, args=(request_queue,))
-# response_process = Process(target=sendResponseToMiddleGateWay, args=(response_queue,))
-# if __name__ ==  '__main__':
-#     startProcesses()
-
-# request_process.join()
-# response_process.join()
 
 
 if __name__ == "__main__":
