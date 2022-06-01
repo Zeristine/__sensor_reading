@@ -50,7 +50,7 @@ def pub_response():
     while True:
         if(len(response_queue) > 0):
             response = response_queue.pop()
-            print(response)
+            KafkaHandler.pub(response["topic"], response["value"])
 
 
 def generate_request():
